@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pracuj.pl Scraper Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loader { border-top-color: #3498db; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+
+    <div class="max-w-6xl mx-auto px-4 py-12">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold tracking-tight mb-2">Pracuj.pl <span class="text-blue-500">Scraper</span></h1>
+            <p class="text-slate-400">Podaj słowa kluczowe (każde w nowej linii), aby pobrać najnowsze oferty.</p>
+        </header>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl mb-8">
+            <textarea id="keywords" rows="5" 
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                placeholder="Np.&#10;Kierowca Testowy&#10;ADAS Test Operator"></textarea>
+            
+            <button onclick="startScraping()" id="btn-search"
+                class="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all flex justify-center items-center">
+                <span>Wyszukaj oferty</span>
+                <div id="spinner" class="hidden loader ease-linear rounded-full border-2 border-t-2 border-slate-200 h-5 w-5 ml-3"></div>
+            </button>
+        </div>
+
+        <div id="results-container" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Podgląd wyników (<span id="count">0</span>)</h2>
+                <div class="space-x-2">
+                    <button onclick="downloadCSV()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg text-sm font-medium">Pobierz CSV</button>
+                    <button onclick="clearResults()" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg text-sm font-medium">Usuń wszystko</button>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div class="overflow-x-auto max-h-[600px]">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-800 sticky top-0">
+                            <tr>
+                                <th class="p-4 text-xs font-semibold uppercase text-slate-400">Stanowisko</th>
+                                <th class="p-4 text-xs font-semibold uppercase text-slate-400">Firma</th>
+                                <th class="p-4 text-xs font-semibold uppercase text-slate-400">Lokacja</th>
+                                <th class="p-4 text-xs font-semibold uppercase text-slate-400">Pensja</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body" class="divide-y divide-slate-800">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <<script src="{{ url_for('static', filename='js/scraper.js') }}"></script>
+</body>
+</html>
