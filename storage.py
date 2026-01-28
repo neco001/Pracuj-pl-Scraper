@@ -17,7 +17,7 @@ class AzureTableManager:
             pass
         return client
 
-    def save_offers(self, offers, group_name):
+    def save_offers(self, offers, group_name, user_email):
         """
         Zapisuje oferty do tabeli przypisanej do grupy (np. 'OffersHR' lub 'OffersSales').
         """
@@ -41,8 +41,51 @@ class AzureTableManager:
                 "Location": offer['Location'],
                 "Link": offer['Link'],
                 "Requirements": offer['Requirements'],
-                "ScrapedAt": datetime.utcnow().isoformat()
+                "ScrapedAt": datetime.utcnow().isoformat(),
+                "CreatedBy": user_email
             }
             
             # Upsert (Update or Insert)
             client.upsert_entity(mode=UpdateMode.MERGE, entity=entity)
+
+    # def get_all_offers(self, group_name):
+    #     """Pobiera wszystkie historyczne oferty dla danej grupy."""
+    #     table_name = f"Offers{group_name}"
+    #     client = TableClient.from_connection_string(self.connection_string, table_name=table_name)
+        
+    #     try:
+    #         # Pobieramy wszystkie encje z tabeli
+    #         entities = client.query_entities(query_filter="")
+    #         return list(entities)
+    #     except Exception as e:
+    #         print(f"Błąd podczas pobierania danych: {e}")
+    #         return []
+    def get_offers_paginated(self, group_name, results_per_page=100, offset_token=None):
+        """Pobiera paczkę ofert korzystając z iteratora stron (pager)."""
+        table_name = f"Offers{group_name}"
+        client = TableClient.from_connection_string(self.connection_string, table_name=table_name)
+        
+        try:
+            # 1. Tworzymy iterator stron
+            pager = client.query_entities(
+                query_filter="", 
+                results_per_page=results_per_page
+            ).by_page(continuation_token=offset_token)
+            
+            # 2. Pobieramy bieżącą stronę
+            current_page = next(pager)
+            offers = list(current_page)
+            
+            # 3. WYCIĄGAMY TOKEN z iteratora (pager), a nie z wyników
+            next_token = pager.continuation_token 
+            
+            return {
+                "offers": offers,
+                "next_token": next_token
+            }
+        except StopIteration:
+            # Jeśli nie ma więcej stron
+            return {"offers": [], "next_token": None}
+        except Exception as e:
+            print(f"Błąd paginacji: {e}")
+            return {"offers": [], "next_token": None}

@@ -6,7 +6,8 @@ from storage import AzureTableManager
 import os
 from dotenv import load_dotenv
 from auth import AuthManager, create_password_hash # Importujemy nasz moduł
-
+import json
+import base64
 app = Flask(__name__)
 
 load_dotenv()
@@ -54,11 +55,13 @@ def index():
 async def scrape():
     if 'user' not in session:
         return jsonify({"error": "Brak autoryzacji"}), 401
+        
     data = request.json
     keywords = list(set([k.strip() for k in data.get('keywords', '').split('\n') if k.strip()]))
     
     # Symulacja grupy użytkownika (później pobierane z modułu logowania)
     user_group = session['user']['group'] # Domyślnie HR
+    user_email = session['user']['email']
     
     scraper = PracujScraper()
     all_results = []
@@ -71,7 +74,7 @@ async def scrape():
     
     # Zapis do bazy danych Azure
     try:
-        storage_manager.save_offers(all_results, user_group)
+        storage_manager.save_offers(all_results, user_group, user_email)
     except Exception as e:
         print(f"Błąd zapisu do Azure Table Storage: {e}")
 
@@ -91,6 +94,56 @@ async def scrape():
     # Usuwanie duplikatów przed wysłaniem na frontend
     unique_results = {o['Link']: o for o in formatted_results}.values()
     return jsonify(list(unique_results))
+
+def encode_token(token):
+    """Zmienia słownik Azure na bezpieczny ciąg znaków Base64."""
+    if not token:
+        return None
+    # Azure token to zazwyczaj słownik, zamieniamy go na JSON, potem na bajty
+    token_json = json.dumps(token)
+    return base64.urlsafe_b64encode(token_json.encode()).decode()
+
+def decode_token(encoded_str):
+    """Zmienia ciąg Base64 z powrotem na słownik dla Azure."""
+    if not encoded_str:
+        return None
+    try:
+        # Dekodujemy z formatu bezpiecznego dla URL
+        decoded_bytes = base64.urlsafe_b64decode(encoded_str.encode())
+        return json.loads(decoded_bytes.decode())
+    except Exception as e:
+        print(f"Błąd dekodowania tokena: {e}")
+        return None
+
+@app.route('/history')
+def history():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    # 1. Pobieramy zakodowany (bezpieczny) string z adresu URL
+    raw_token = request.args.get('token')
+    
+    # 2. Dekodujemy go na słownik, który rozumie biblioteka Azure
+    azure_token = decode_token(raw_token)
+    
+    group = session['user']['group']
+    
+    # 3. Pobieramy dane z bazy używając zdekodowanego tokena
+    result = storage_manager.get_offers_paginated(
+        group, 
+        results_per_page=100, 
+        offset_token=azure_token
+    )
+    
+    # 4. NOWY token z Azure znów kodujemy w Base64 przed wysłaniem do guzika "Następne"
+    safe_next_token = encode_token(result['next_token'])
+    
+    return render_template(
+        'history.html', 
+        offers=result['offers'], 
+        next_token=safe_next_token,
+        user=session['user']
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)

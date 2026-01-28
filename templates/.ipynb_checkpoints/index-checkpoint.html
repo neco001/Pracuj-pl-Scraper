@@ -11,31 +11,7 @@
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
-<nav class="bg-slate-900 border-b border-slate-800 py-4 mb-8">
-    <div class="max-w-6xl mx-auto px-4 flex justify-between items-center">
-        <div class="flex items-center space-x-2">
-            <span class="text-xl font-bold tracking-tight">Pracuj.pl <span class="text-blue-500">Scraper</span></span>
-        </div>
-
-        <div class="flex items-center space-x-6">
-            <div class="text-sm">
-                <span class="text-slate-400 font-medium italic">Zalogowany jako:</span>
-                <span class="text-slate-100 font-semibold ml-1">{{ user.name }}</span>
-                <span class="bg-blue-900/40 text-blue-400 text-xs font-bold px-2 py-0.5 rounded ml-2 border border-blue-800">
-                    {{ user.group }}
-                </span>
-            </div>
-            
-            <a href="{{ url_for('logout') }}" 
-               class="text-sm font-medium text-slate-400 hover:text-red-400 transition-colors flex items-center group">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Wyloguj
-            </a>
-        </div>
-    </div>
-</nav>
+{% include 'partials/nav.html' %}
 
     <div class="max-w-6xl mx-auto px-4 py-12">
         <header class="text-center mb-12">
